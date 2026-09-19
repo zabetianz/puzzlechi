@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+  <name>پازلچی</name>
+  <description>یه بازی پازل کشویی با رابط کاربری فارسی</description>
+  <author>zabetianz</author>
+  <version>1.0</version>
+  <technologies>
+    <tech>HTML</tech>
+    <tech>CSS</tech>
+    <tech>JavaScript</tech>
+  </technologies>
+  <features>
+    <feature>محدودیت زمانی برای هر مرحله</feature>
+    <feature>سختی افزایشی از ۳×۳ تا ۵×۵</feature>
+    <feature>پشتیبانی از کلیک، لمس و کیبورد</feature>
+    <feature>ذخیره‌ی بهترین امتیاز</feature>
+  </features>
+</project>
