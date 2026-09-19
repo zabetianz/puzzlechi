@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>پازلچی</title>
+<style>
+  :root{
+    --bg1:#ffe9a8;
+    --bg2:#ffd1e8;
+    --bg3:#b9e6ff;
+    --ink:#2b2140;
+    --card-bg:rgba(255,255,255,0.9);
+    --accent:#ff6b6b;
+    --accent-dark:#e6484d;
+    --tile1:#ff8fab;
+    --tile2:#ffc785;
+    --tile3:#8fe3a0;
+    --tile4:#8fc9ff;
+    --tile5:#c39bff;
+    --gold:#ffb703;
+    --empty:rgba(255,255,255,0.25);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --card-bg:rgba(35,30,50,0.88);
+      --ink:#f2eefc;
+    }
+  }
+  :root[data-theme="dark"]{
+    --card-bg:rgba(35,30,50,0.88);
+    --ink:#f2eefc;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;height:100%;
+    font-family:'Vazirmatn','Segoe UI',Tahoma,Arial,sans-serif;
+    background:linear-gradient(135deg,var(--bg1),var(--bg2) 50%,var(--bg3));
+    background-attachment:fixed;
+    color:var(--ink);
+  }
+  body{
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100%;padding:16px;
+  }
+  h1{
+    margin:6px 0 2px;
+    font-size:clamp(24px,6vw,34px);
+    text-shadow:0 2px 4px rgba(0,0,0,0.12);
+  }
+  .subtitle{margin:0 0 12px;font-size:14px;opacity:0.75;text-align:center;}
+
+  .hud{
+    display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;justify-content:center;
+  }
+  .pill{
+    background:var(--card-bg);
+    border-radius:999px;
+    padding:8px 18px;
+    font-weight:700;
+    box-shadow:0 3px 10px rgba(0,0,0,0.12);
+    font-size:14px;
+    display:flex;align-items:center;gap:6px;
+    min-width:86px;justify-content:center;
+  }
+  .pill .num{font-size:17px;color:var(--accent-dark);}
+  .pill.timer .num{color:#2d6cdf;}
+  .pill.timer.low .num{color:var(--accent-dark);}
+
+  .board-wrap{
+    position:relative;
+    width:100%;
+    max-width:420px;
+    aspect-ratio:1/1;
+  }
+  .board{
+    position:relative;
+    width:100%;
+    height:100%;
+    background:var(--card-bg);
+    border-radius:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+    padding:8px;
+    display:grid;
+    gap:6px;
+  }
+  .tile{
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:800;
+    font-size:clamp(16px,5vw,26px);
+    color:#fff;
+    cursor:pointer;
+    user-select:none;
+    box-shadow:0 4px 10px rgba(0,0,0,0.18), inset 0 -3px 0 rgba(0,0,0,0.12);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .tile:hover{ transform: scale(1.03); }
+  .tile:active{ transform: scale(0.96); }
+  .tile.empty{
+    background:var(--empty) !important;
+    box-shadow:none;
+    cursor:default;
+  }
+  .tile.movable::after{
+    content:'';
+  }
+
+  .msg-overlay{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:none;
+    border-radius:18px;
+    overflow:hidden;
+  }
+  .msg-box{
+    background:var(--card-bg);
+    padding:16px 28px;
+    border-radius:16px;
+    font-size:clamp(18px,5vw,26px);
+    font-weight:800;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25);
+    opacity:0;transform:scale(0.7);
+    transition:opacity .2s ease, transform .2s ease;
+    text-align:center;
+  }
+  .msg-box.show{opacity:1;transform:scale(1);}
+  .win-text{color:#2a9d4a;}
+  .lose-text{color:var(--accent-dark);}
+
+  .controls{
+    margin-top:14px;
+    display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+  }
+  button{
+    font-family:inherit;border:none;border-radius:999px;
+    padding:10px 22px;font-size:14px;font-weight:700;cursor:pointer;
+    background:var(--accent);color:#fff;
+    box-shadow:0 4px 12px rgba(255,107,107,0.4);
+    transition:transform .1s ease, background .15s ease;
+  }
+  button:hover{background:var(--accent-dark);}
+  button:active{transform:scale(0.95);}
+  button.secondary{
+    background:var(--card-bg);color:var(--ink);
+    box-shadow:0 3px 10px rgba(0,0,0,0.12);
+  }
+
+  .hint{
+    margin-top:10px;font-size:12.5px;opacity:0.65;text-align:center;max-width:420px;
+  }
+
+  .end-screen{
+    position:absolute;inset:0;
+    background:rgba(20,15,35,0.6);
+    border-radius:18px;
+    display:none;align-items:center;justify-content:center;
+    flex-direction:column;color:#fff;text-align:center;padding:20px;
+    z-index:5;
+  }
+  .end-screen.show{display:flex;}
+  .end-screen h2{font-size:clamp(22px,7vw,32px);margin:0 0 6px;color:var(--gold);}
+  .end-screen p{margin:4px 0 16px;font-size:15px;}
+</style>
+</head>
+<body>
+
+<h1>🧩 پازلچی</h1>
+<p class="subtitle">شماره‌ها رو مرتب کن قبل از تموم شدن زمان!</p>
+
+<div class="hud">
+  <div class="pill">مرحله 🏁 <span class="num" id="levelVal">1</span></div>
+  <div class="pill timer" id="timerPill">زمان ⏱ <span class="num" id="timeVal">30</span></div>
+  <div class="pill">حرکت 👆 <span class="num" id="movesVal">0</span></div>
+  <div class="pill">امتیاز 🏆 <span class="num" id="bestVal">0</span></div>
+</div>
+
+<div class="board-wrap">
+  <div class="board" id="board"></div>
+  <div class="msg-overlay"><div class="msg-box" id="msgBox">آفرین!</div></div>
+  <div class="end-screen" id="endScreen">
+    <h2 id="endTitle">تبریک!</h2>
+    <p id="endSub">امتیاز نهایی: 0</p>
+    <button id="restartBtn">شروع دوباره از مرحله ۱</button>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="resetBtn" class="secondary">شروع دوباره</button>
+</div>
+<p class="hint">با کلیک یا لمس، خونه‌ی کنار جای خالی رو جابه‌جا کن. با کیبورد هم می‌تونی از کلیدهای جهت‌دار استفاده کنی. هر مرحله که رد بشی، پازل یه درجه سخت‌تر و زمان کمتر می‌شه.</p>
+
+<script>
+(function(){
+  const boardEl = document.getElementById('board');
+  const levelEl = document.getElementById('levelVal');
+  const timeEl = document.getElementById('timeVal');
+  const movesEl = document.getElementById('movesVal');
+  const bestEl = document.getElementById('bestVal');
+  const timerPill = document.getElementById('timerPill');
+  const msgBox = document.getElementById('msgBox');
+  const endScreen = document.getElementById('endScreen');
+  const endTitle = document.getElementById('endTitle');
+  const endSub = document.getElementById('endSub');
+
+  const tileColors = ['tile1','tile2','tile3','tile4','tile5'];
+
+  function loadBest(){
+    try{ const v = localStorage.getItem('puzzlechi_best'); return v?parseInt(v,10):0; }
+    catch(e){ return 0; }
+  }
+  function saveBest(v){ try{ localStorage.setItem('puzzlechi_best', String(v)); }catch(e){} }
+
+  let best = loadBest();
+  bestEl.textContent = best;
+
+  let state = {
+    level: 1,
+    size: 3,
+    timeLeft: 30,
+    timeTotal: 30,
+    moves: 0,
+    score: 0,
+    tiles: [],
+    emptyIndex: 0,
+    timerId: null,
+    locked: false,
+    over: false,
+  };
+
+  function levelConfig(level){
+    // size grows every 2 levels, time shrinks
+    const size = Math.min(3 + Math.floor((level-1)/2), 5);
+    const baseTime = 40 - (size-3)*5;
+    const time = Math.max(15, baseTime - (level-1)*2);
+    return { size, time };
+  }
+
+  function makeSolvedTiles(size){
+    const n = size*size;
+    const arr = [];
+    for(let i=1;i<n;i++) arr.push(i);
+    arr.push(0); // 0 = empty
+    return arr;
+  }
+
+  function isSolvable(arr, size){
+    const flat = arr.filter(v=>v!==0);
+    let inversions = 0;
+    for(let i=0;i<flat.length;i++){
+      for(let j=i+1;j<flat.length;j++){
+        if(flat[i]>flat[j]) inversions++;
+      }
+    }
+    if(size % 2 === 1){
+      return inversions % 2 === 0;
+    } else {
+      const emptyRowFromBottom = size - Math.floor(arr.indexOf(0)/size);
+      if(emptyRowFromBottom % 2 === 0){
+        return inversions % 2 === 1;
+      } else {
+        return inversions % 2 === 0;
+      }
+    }
+  }
+
+  function shuffle(size){
+    let arr;
+    do{
+      arr = makeSolvedTiles(size);
+      for(let i=arr.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [arr[i],arr[j]] = [arr[j],arr[i]];
+      }
+    } while(!isSolvable(arr, size) || isSolved(arr));
+    return arr;
+  }
+
+  function isSolved(arr){
+    for(let i=0;i<arr.length-1;i++){
+      if(arr[i] !== i+1) return false;
+    }
+    return arr[arr.length-1] === 0;
+  }
+
+  function buildBoard(){
+    const size = state.size;
+    boardEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    boardEl.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+    boardEl.innerHTML = '';
+    state.tiles.forEach((val, idx)=>{
+      const div = document.createElement('div');
+      div.className = 'tile';
+      div.dataset.idx = idx;
+      if(val === 0){
+        div.classList.add('empty');
+        state.emptyIndex = idx;
+      } else {
+        div.textContent = val;
+        div.classList.add(tileColors[(val-1) % tileColors.length]);
+        div.addEventListener('click', ()=>attemptMove(idx));
+      }
+      boardEl.appendChild(div);
+    });
+  }
+
+  function neighbors(idx, size){
+    const row = Math.floor(idx/size), col = idx % size;
+    const result = [];
+    if(row>0) result.push(idx-size);
+    if(row<size-1) result.push(idx+size);
+    if(col>0) result.push(idx-1);
+    if(col<size-1) result.push(idx+1);
+    return result;
+  }
+
+  function attemptMove(idx){
+    if(state.locked || state.over) return;
+    const size = state.size;
+    const empty = state.emptyIndex;
+    if(neighbors(idx, size).includes(empty)){
+      [state.tiles[idx], state.tiles[empty]] = [state.tiles[empty], state.tiles[idx]];
+      state.emptyIndex = idx;
+      state.moves++;
+      movesEl.textContent = state.moves;
+      buildBoard();
+      if(isSolved(state.tiles)){
+        handleLevelWin();
+      }
+    }
+  }
+
+  function moveDirection(dir){
+    // dir: 'up','down','left','right' meaning tile moves in that direction into empty
+    const size = state.size;
+    const empty = state.emptyIndex;
+    const row = Math.floor(empty/size), col = empty%size;
+    let targetIdx = null;
+    if(dir==='up' && row<size-1) targetIdx = empty+size;
+    if(dir==='down' && row>0) targetIdx = empty-size;
+    if(dir==='left' && col<size-1) targetIdx = empty+1;
+    if(dir==='right' && col>0) targetIdx = empty-1;
+    if(targetIdx !== null) attemptMove(targetIdx);
+  }
+
+  document.addEventListener('keydown', (e)=>{
+    const map = {
+      ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right'
+    };
+    if(map[e.key]){
+      e.preventDefault();
+      moveDirection(map[e.key]);
+    }
+  });
+
+  function startTimer(){
+    clearInterval(state.timerId);
+    timerPill.classList.remove('low');
+    state.timerId = setInterval(()=>{
+      state.timeLeft--;
+      timeEl.textContent = state.timeLeft;
+      if(state.timeLeft <= 10) timerPill.classList.add('low');
+      if(state.timeLeft <= 0){
+        clearInterval(state.timerId);
+        handleTimeUp();
+      }
+    }, 1000);
+  }
+
+  function showMessage(text, cls){
+    msgBox.textContent = text;
+    msgBox.className = 'msg-box show ' + cls;
+    setTimeout(()=>{ msgBox.className = 'msg-box ' + cls; }, 1000);
+  }
+
+  function handleLevelWin(){
+    state.locked = true;
+    clearInterval(state.timerId);
+    const bonus = state.timeLeft * 10 + 50;
+    state.score += bonus;
+    showMessage(`مرحله تموم شد! +${bonus} امتیاز`, 'win-text');
+    setTimeout(()=>{
+      state.level++;
+      startLevel(state.level);
+    }, 1200);
+  }
+
+  function handleTimeUp(){
+    state.locked = true;
+    state.over = true;
+    showMessage('زمان تموم شد! ⏰','lose-text');
+    if(state.score > best){
+      best = state.score;
+      saveBest(best);
+      bestEl.textContent = best;
+    }
+    setTimeout(()=>{
+      endTitle.textContent = 'وقت تموم شد!';
+      endSub.textContent = `به مرحله ${state.level} رسیدی — امتیاز نهایی: ${state.score}`;
+      endScreen.classList.add('show');
+    }, 900);
+  }
+
+  function startLevel(level){
+    const cfg = levelConfig(level);
+    state.size = cfg.size;
+    state.timeTotal = cfg.time;
+    state.timeLeft = cfg.time;
+    state.moves = 0;
+    state.locked = false;
+    state.over = false;
+    state.tiles = shuffle(state.size);
+    levelEl.textContent = level;
+    timeEl.textContent = state.timeLeft;
+    movesEl.textContent = 0;
+    timerPill.classList.remove('low');
+    endScreen.classList.remove('show');
+    buildBoard();
+    startTimer();
+  }
+
+  function fullReset(){
+    state.level = 1;
+    state.score = 0;
+    startLevel(1);
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', fullReset);
+  document.getElementById('restartBtn').addEventListener('click', fullReset);
+
+  // swipe support for touch
+  let touchStartX=0, touchStartY=0;
+  boardEl.addEventListener('touchstart', (e)=>{
+    const t = e.touches[0];
+    touchStartX = t.clientX; touchStartY = t.clientY;
+  }, {passive:true});
+  boardEl.addEventListener('touchend', (e)=>{
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+    if(Math.abs(dx) < 20 && Math.abs(dy) < 20) return; // treat as tap, handled by click
+    if(Math.abs(dx) > Math.abs(dy)){
+      moveDirection(dx>0 ? 'right':'left');
+    } else {
+      moveDirection(dy>0 ? 'down':'up');
+    }
+  }, {passive:true});
+
+  startLevel(1);
+})();
+</script>
+
+</body>
+</html>
